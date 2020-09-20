@@ -1,0 +1,236 @@
+<html>
+<head>
+  <title>Ejemplo Three.js</title>
+    <style>
+      body{ margin: 0;
+            overflow: hidden;
+            background: red;
+          }
+			canvas{ width: 100%;
+        height: 100%
+      }
+    </style>
+  </head>
+<body>
+    <canvas id="micanvas"></canvas>
+    <script src="./js/three.js"></script>
+    <script src="./js/MDDLoader.js"></script>
+    
+      <script src="LegacyJSONLoader.js"></script>
+    <script type="x-shader/x-vertex" id="vertexShader">
+      void main(){
+        vec4 modelViewPosition = modelViewMatrix * vec4(position,1.0);
+        gl_Position= projectionMatrix * modelViewPosition;
+      }
+    </script>
+    <script type="x-shader/x-fragment" id="fragmentShader">
+        void main(){
+          gl_FragColor= vec4(1.0,0.0,0.0,1.0);
+        }
+    </script>
+    <script>
+var physics;
+
+//Load MMD resources and instantiate MMDPhysics
+var modelFile = '../three.js/examples/models/mmd/miku/miku_v2.pmd';
+var vmdFiles = [ '../three.js/examples/models/mmd/vmds/wavefile_v2.vmd' ];
+
+
+
+     let texture = new THREE.TextureLoader().load('tierra.jpg');
+     const loader = new THREE.TextureLoader();
+      var renderer= new THREE.WebGLRenderer({canvas: document.getElementById("micanvas"), antialias: true});
+      renderer.setClearColor('#334');
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setSize(window.innerWidth, window.innerHeight);
+
+
+      var scene= new THREE.Scene();
+
+      //Geometria
+      var cubo=new THREE.CubeGeometry(100,100,100);
+      var esfera= new THREE.SphereGeometry(60,20,20);
+      var esfera2= new THREE.SphereGeometry(90,20,20);
+      var esfera3= new THREE.SphereGeometry(120,20,20);
+      var suelo= new THREE.PlaneGeometry(10000, 10000, 100, 100);
+      var hexagon = new THREE.CylinderGeometry( 80, 80, 5, 6 );
+
+      //Materiales
+      //Todos lo materiales definidos en Three.js están creados a partir de Shaders, y esta es su
+      //principal ventaja, pero por alguna razón si el usuario quisiera crear por si mismo sus propios
+      //shader, three.js también nos da la posibilidad
+      //Los shader no se escriben en Javascript, sino en GSLS, mas similar a C
+      /*var materialshader = new THREE.ShaderMaterial({
+        vertexShader: document.getElementById('vertexShader').textContent,
+        fragmentShader: document.getElementById('fragmentShader').textContent
+      });*/
+
+      var material = new THREE.MeshStandardMaterial({color: '#333',
+      map: new THREE.TextureLoader().load('tierra-piedra.jpg')
+      
+      //wireframe: true
+      //transparent:true
+      //opacity:0.2
+      });
+      var material2 = new THREE.MeshBasicMaterial({color: '#333',
+    map: new THREE.TextureLoader().load('madera.jpg') //loader.load('tierra.jpg'),
+      });
+
+      var material3 = new THREE.MeshStandardMaterial({color:'#333',
+      map: new THREE.TextureLoader().load('tierra.jpg')
+      //wireframe: true
+      //transparent:true
+      //opacity:0.2
+      });
+
+      var fuego = new THREE.MeshStandardMaterial({color:'#333',
+      map: new THREE.TextureLoader().load('fuego.jpg')
+      //wireframe: true
+      //transparent:true
+      //opacity:0.2
+      });
+      
+      //MeshNormalMaterial
+      //MeshBasicMaterial
+      //MeshLambertMaterial: emissive: 'yellow', también la intensidad
+      //MeshPhongMaterial: specular: 'yellow', shininess: 30;
+      //MeshStandardMaterial
+      //MeshDepthMaterial
+      //side: THREE.BackSide
+      //map: new THREE.TextureLoader().load('')
+      //normalMap: new THREE.TextureLoader().load('')
+
+      //Sprite
+      //siempre apuntan a la camara
+      /*var materialsprite=new THREE.SpriteMaterial({
+        map: new THREE.TextureLoader().load('pixel.gif')
+      });
+
+      var sprite= new THREE.Sprite(materialsprite);
+      sprite.scale.set(100,100,100);
+      sprite.position.z=-1000;
+      scene.add(sprite);*/
+
+      //Los cargamos en la escena
+      //var mesh= new THREE.Mesh(cubo, material3);
+      var mesh= new THREE.Mesh(esfera, material3);
+      var mesh2= new THREE.Mesh(esfera2, material);
+      var mesh3= new THREE.Mesh(suelo,material2);
+      var mesh4= new THREE.Mesh(esfera3, fuego);
+      var mesh5 = new THREE.Mesh(hexagon, fuego);
+      mesh.position.z = -500;
+      mesh.position.x = -300;
+      mesh.position.y = -50;
+
+      mesh2.position.z = -500;
+      mesh2.position.x = -100;
+      mesh2.position.y = -50;
+
+      mesh4.position.z = -500;
+      mesh4.position.x = 150;
+      mesh4.position.y = -50;
+
+      mesh5.position.z = -500;
+      mesh5.position.x = 350;
+      mesh5.position.y = -50;
+
+      mesh3.rotation.x = -90 * (Math.PI / 180);
+      mesh3.position.y = -200;
+
+      //mesh5.rotation.x = -270 * (Math.PI / 180);
+      scene.add(mesh);
+      scene.add(mesh2);
+      scene.add(mesh3);
+      scene.add(mesh4);
+      scene.add(mesh5);
+
+
+      //Las luces
+      var luz= new THREE.AmbientLight('white',0.5);
+      scene.add(luz);
+
+      //var luz1= new THREE.PointLight('white',0.5,6000); //distancia a la que llega
+      //scene.add(luz1);
+
+      var luz2=new THREE.DirectionalLight('white', 2.0, 1000);
+      luz2.target = mesh;
+      scene.add(luz2);
+
+      //var luz3=new THREE.SpotLight('white',2.0,1000);
+      //luz3.target= mesh;
+      //scene.add(luz3);
+
+      //var luz4= new THREE.HemisphereLight('blue','orange',1);
+      //scene.add(luz4);
+
+      //Las camaras
+      var camera=new THREE.PerspectiveCamera(35,window.innerWidth / window.innerHeight,0.1,10000);
+      //camera.position.set(0,0,0);
+      //var camera = new THREE.OrthographicCamera(-500,500,400,-400,0.1,10000);
+      camera.position.z=700;
+
+      //var newCamera = new THREE.PerspectiveCamera(35,window.innerWidth / window.innerHeight,0.1,10000);
+
+      //var cameraHelper = new THREE.CameraHelper(newCamera);
+      //scene.add(cameraHelper);
+      //Esto ha sido un helper o indicador de camara, pero en Three.js también existen helpers
+      //de luces en forma de funciones que se utilizan de la misma manera y que muestran
+      //la trayectoria de la luz, si lo necesitas, te animo a usarlas.
+
+      //Las sombras
+
+     //renderer.shadowMap.enabled = true;
+     //renderer.shadowMap.type = THREE.PCFShadowMap;
+
+     var light = new THREE.SpotLight(0xffffff, 4.0, 3000);
+     light.position.y = 100;
+     light.target = mesh;
+
+     /*light.castShadow = true;
+     light.shadow = new THREE.LightShadow( new THREE.PerspectiveCamera( 100, 1, 500, 1000 ) );
+	   light.shadow.bias = 0.0001;
+     light.shadow.mapSize.width = 2048 * 2;
+     light.shadow.mapSize.height = 2048 * 2;*/
+     scene.add(light);
+
+     //mesh.castShadow = true;
+     //mesh2.castShadow = true;
+     //mesh3.receiveShadow = true;
+
+
+     //Introducir modelo 3d exportado
+     /*var loader = new THREE.ObjectLoader();
+     loader.load('nefertiti.json', function(object) {
+    scene.add(object);
+    object.scale.set(100,100,100);
+    object.position.z= -1000;
+    object.position.y= 300;
+    object.rotation.y += 60;
+    });*/
+
+      //Bucle de la animacion
+      requestAnimationFrame(render);
+      var delta=0;
+      function render(){
+        //Rotacion de la camara alrededor de la luz
+        delta+=0.01;
+
+        // camera.lookAt(light.position);
+        // camera.position.x = Math.sin(delta) * 2000;
+        // camera.position.z = Math.cos(delta) * 2000;
+
+        mesh.rotation.x += 0.01;
+        mesh.rotation.y += 0.01;
+        mesh2.rotation.y += 0.01;
+        //mesh2.rotation.y += 0.01;
+        //mesh4.rotation.x += 0.01;
+        mesh4.rotation.x += 0.01;
+        mesh5.rotation.z += 0.01;
+        renderer.render(scene, camera);
+        requestAnimationFrame(render);
+      }
+      //Renderizamos
+      renderer.render(scene,camera);
+    </script>
+</body>
+</html>
